@@ -261,6 +261,10 @@ namespace pm_lib {
 	}
 	if ( my_papi.num_events == 0) return;
 
+	#ifdef DEBUG_PRINT_WATCH
+	fprintf(stderr, "debug <gatherHWPC> [%s] starts. my_rank=%d \n", m_label.c_str(), my_rank );
+	#endif
+
 	sortPapiCounterList ();
 
 	double perf_rate=0.0;
@@ -319,7 +323,25 @@ namespace pm_lib {
 			printError("gatherHWPC", "new memory failed. %d x %d x 8\n", num_process, my_papi.num_sorted);
 			PM_Exit(0);
 		}
+		#ifdef DEBUG_PRINT_WATCH
+		fprintf(stderr, "debug <gatherHWPC> allocated [%s] array at %p,  size=%d Bytes for my_rank=%d \n",
+			m_label.c_str(), m_sortedArrayHWPC, 8*num_process*my_papi.num_sorted, my_rank );
+		#endif
+	} else {
+		#ifdef DEBUG_PRINT_WATCH
+		fprintf(stderr, "debug <gatherHWPC> [%s] already exists. my_rank=%d \n",
+			m_label.c_str(), my_rank );
+		#endif
 	}
+
+	#ifdef DEBUG_PRINT_WATCH
+	if ( num_process > 1 ) {
+		fprintf(stderr, "debug <gatherHWPC> [%s] calling barrier \n", m_label.c_str() );
+		int iret = MPI_Barrier(MPI_COMM_WORLD);
+		if ( iret != 0 ) { printError("gatherHWPC", " MPI_Barrier failed. iret=%d\n", iret); }
+	}
+	fprintf(stderr, "debug <gatherHWPC> [%s] calling MPI_Allgather \n", m_label.c_str() );
+	#endif
 
 	if ( num_process > 1 ) {
 		int iret =
@@ -335,6 +357,10 @@ namespace pm_lib {
 			m_sortedArrayHWPC[i] = my_papi.v_sorted[i];
 		}
 	}
+	#ifdef DEBUG_PRINT_WATCH
+	fprintf(stderr, "debug <gatherHWPC> [%s] ends. my_rank=%d \n",
+			m_label.c_str(), my_rank );
+	#endif
 
 #endif
   }
@@ -455,10 +481,17 @@ namespace pm_lib {
 		}
 
 		#ifdef DEBUG_PRINT_WATCH
-		if (my_rank == 0) {
-			fprintf(stderr, "\t<PerfWatch::gather> [%15s] my_rank=%d. Allocated new m_countArray[%d] at address:%p and others.\n",
-				m_label.c_str(), my_rank, m_np, m_countArray);
-		}
+		//	if (my_rank == 0) {
+		fprintf(stderr, "debug <PerfWatch::gather> allocated [%15s] 3 arrays at %p, %p,  %p \n",
+			m_label.c_str(), m_timeArray, m_flopArray, m_countArray );
+		//	}
+		#endif
+	} else {
+		#ifdef DEBUG_PRINT_WATCH
+		//	if (my_rank == 0) {
+		fprintf(stderr, "debug <PerfWatch::gather> [%15s] arrays already exist at %p, %p,  %p \n",
+			m_label.c_str(), m_timeArray, m_flopArray, m_countArray );
+		//	}
 		#endif
 	}
 
@@ -477,14 +510,14 @@ namespace pm_lib {
 	// i.e. m_timeArray, m_flopArray, m_countArray
 
 	#ifdef DEBUG_PRINT_WATCH
-	if (my_rank == 0) {
-		fprintf(stderr, "\t<PerfWatch::gather> [%15s] m_countArray[0:*]:", m_label.c_str() );
-		for (int i=0; i<num_process; i++) { fprintf(stderr, " %ld",  m_countArray[i]); } fprintf(stderr, "\n");
-	}
+	fprintf(stderr, "\t<PerfWatch::gather> [%15s] my_rank=%d, m_countArray[0:*]:", m_label.c_str(), my_rank);
+	for (int i=0; i<num_process; i++) { fprintf(stderr, " %ld",  m_countArray[i]); } fprintf(stderr, "\n");
 	int iret;
 	iret = MPI_Barrier(MPI_COMM_WORLD);
 	if ( iret != 0 ) {
-		printError("gather", " MPI_Barrier failed. iret=%d\n", iret);
+		printError("gather", " MPI_Barrier failed. my_rank=%d, iret=%d\n", my_rank, iret);
+	} else {
+		fprintf(stderr, "\t<PerfWatch::gather> [%15s] my_rank=%d  ends\n", m_label.c_str(), my_rank );
 	}
 	#endif
 
@@ -598,7 +631,7 @@ namespace pm_lib {
 	}
 
 	#ifdef DEBUG_PRINT_WATCH
-	if (my_rank == 0) {
+	//	if (my_rank == 0) {
 		#pragma omp critical
 		{
 		fprintf(stderr, "<mergeParallelThread> [%s] merge step 2. my_thread=%d, &my_papi=%p \n",
@@ -621,7 +654,7 @@ namespace pm_lib {
 		fprintf (stderr, "\t m_count=%ld, m_time=%e, m_flop=%e\n", m_count, m_time, m_flop);
 		#endif
 		}
-	}
+	//	}
 	#endif
 
   #endif
@@ -787,7 +820,7 @@ namespace pm_lib {
 
 
 	#ifdef DEBUG_PRINT_PAPI_THREADS
-    if (my_rank == 0) {
+    //	if (my_rank == 0) {
 		#pragma omp critical
 		{
     	fprintf(stderr, "<updateMergedThread> [%s] merge step 3. master thread:\n", m_label.c_str());
@@ -808,7 +841,7 @@ namespace pm_lib {
 		}
 		fprintf (stderr, "\t m_count=%ld, m_time=%e, m_flop=%e\n", m_count, m_time, m_flop);
 		}
-    }
+    //	}
 	#endif
 
 // we should clean up "papi" after these steps.
@@ -879,9 +912,7 @@ namespace pm_lib {
 	// No problem. Go ahead.
 #else
 	// Nop. This compiler does not support threadprivate C++ class.
-		if (my_rank == 0) {
 		printError("setProperties", "Calling [%s] from inside of parallel region is not supported by the C++ compiler which built PMlib.\n", label.c_str());
-		}
 		//	m_is_set = false;
 #endif
 	}
@@ -913,17 +944,17 @@ namespace pm_lib {
 #endif
 
 #ifdef DEBUG_PRINT_WATCH
-    //	print the master process
-    if (my_rank == 0) {
+    //	if (my_rank == 0) {
 		// id is numbered per thread, i.e. each thread may have different value for this section id.
-    	fprintf(stderr, "<PerfWatch::setProperties> [%s] thread:%d, id:%d, m_in_parallel=%s \n",
+    	fprintf(stderr, "<PerfWatch::setProperties> [%s] thread:%d, id=%d, m_in_parallel=%s \n",
 			label.c_str(), my_thread, id, m_in_parallel?"true":"false" );
 
+		#ifdef DEBUG_PRINT_PAPI
 		#pragma omp critical
 		{
+    	fprintf(stderr, "\t[%s] my_rank=%d, my_thread:%d, num_threads=%d, address check: &num_threads=%p, &papi=%p, &my_papi=%p\n",
+			label.c_str(), my_rank, my_thread, num_threads,   &num_threads, &papi, &my_papi);
 		#ifdef DEBUG_PRINT_PAPI_THREADS
-    	fprintf(stderr, "\t\t [%s] address check thread:%d, &thread=%p, &my_rank=%p, &(papi)=%p, &(my_papi)=%p\n",
-			label.c_str(), my_thread, &my_thread, &my_rank, &papi, &my_papi);
 		for (int j=0; j<num_threads; j++) {
 			fprintf (stderr, "\tmy_papi.th_accumu[%d][*]:", j);
 			for (int i=0; i<my_papi.num_events; i++) {
@@ -931,13 +962,18 @@ namespace pm_lib {
 			};	fprintf (stderr, "\n");
 		}
 		#endif
-		#ifdef USE_POWER
-    	fprintf(stderr, "\t\t my_power is initialized. [%s] thread:%d, &my_power=%p \n",
-			label.c_str(), my_thread, &my_power);
-		#endif
     	}
+		#endif
+
+		#ifdef USE_POWER
+		#pragma omp critical
+		{
+    	fprintf(stderr, "\t\t [%s] address check my_power thread:%d, &my_power=%p \n",
+			label.c_str(), my_thread, &my_power);
+    	}
+		#endif
 		// end of #pragma omp critical
-	}
+	//	}
 #endif
 
   }
@@ -960,10 +996,10 @@ namespace pm_lib {
 		power.num_power_stats = num;
 	}
 	#ifdef DEBUG_PRINT_WATCH
-    if (my_rank == 0) {
+    //	if (my_rank == 0) {
     	fprintf(stderr, "<PerfWatch::setRootPowerLevel> [%s] level_report=%d num_power_stats=%d \n",
 		m_label.c_str(), power.level_report, power.num_power_stats);
-	}
+	//	}
 	#endif
 #endif
   }
@@ -977,7 +1013,7 @@ namespace pm_lib {
     if (level_POWER == 0) return;
 	#ifdef DEBUG_PRINT_POWER_EXT
 	(void) MPI_Barrier(MPI_COMM_WORLD);
-   	fprintf(stderr, "<gatherPOWER> [%s] my_rank:%d, thread:%d, w_accumu[0]=%e \n",
+   	fprintf(stderr, "<PerfWatch::gatherPOWER> [%s] my_rank:%d, thread:%d, w_accumu[0]=%e \n",
 		m_label.c_str(), my_rank, my_thread, my_power.w_accumu[0]);
 	#endif
 
@@ -1096,8 +1132,7 @@ namespace pm_lib {
   void PerfWatch::start()
   {
 #ifdef DEBUG_PRINT_WATCH
-    if (my_rank == 0)
-		fprintf (stderr, "<PerfWatch::start> [%s] my_thread=%d\n", m_label.c_str(), my_thread);
+	fprintf (stderr, "<PerfWatch::start> [%s] my_thread=%d\n", m_label.c_str(), my_thread);
 #endif
 
     if (!m_is_healthy) {
@@ -1311,11 +1346,9 @@ namespace pm_lib {
 		//	my_papi.th_v_sorted[my_thread][2] = m_flop;
 
 	#ifdef DEBUG_PRINT_WATCH
-	if (my_rank == 0) {
-		fprintf (stderr, "<PerfWatch::stop> [%s] my_thread=%d, fPT=%e, itC=%u, m_count=%ld, m_time=%f, m_flop=%e\n",
+	fprintf (stderr, "<PerfWatch::stop> [%s] my_thread=%d, fPT=%e, itC=%u, m_count=%ld, m_time=%f, m_flop=%e\n",
 			m_label.c_str(), my_thread, flopPerTask, iterationCount, m_count, m_time, m_flop);
-		fprintf (stderr, "\t\t m_startTime=%f, m_stopTime=%f\n", m_startTime, m_stopTime);
-	}
+	fprintf (stderr, "\t\t m_startTime=%f, m_stopTime=%f\n", m_startTime, m_stopTime);
 	#endif
 #ifdef USE_OTF
     int is_unit = statsSwitch();
@@ -1887,7 +1920,7 @@ namespace pm_lib {
 #ifdef USE_POWER
 	cp_env = std::getenv("POWER_CHOOSER");
 	if (cp_env == NULL) {
-		fprintf(fp, "\t\tPOWER_CHOOSER is not provided. NODE is assumed.\n");
+		fprintf(fp, "\t\tPOWER_CHOOSER is not provided. OFF is assumed.\n");
 	} else {
 		s_chooser = cp_env;
 		if (s_chooser == "OFF" || s_chooser == "NO" ||
@@ -1936,7 +1969,7 @@ namespace pm_lib {
     double perf_rate;
 	#ifdef DEBUG_PRINT_WATCH
 	//	if (my_rank == 0) {
-	//	fprintf(stderr, "\t <PerfWatch::printDetailThreads> my_rank=%d  arg:rank_ID=%d\n", my_rank, rank_ID);
+		fprintf(stderr, "\t <PerfWatch::printDetailThreads> my_rank=%d  arg:rank_ID=%d\n", my_rank, rank_ID);
 	//	}
 	#endif
 
@@ -2012,9 +2045,22 @@ namespace pm_lib {
 
 		PerfWatch::selectPerfSingleThread(j);
 
+			#ifdef DEBUG_PRINT_PAPI_THREADS
+			fprintf(stderr, "\t<printDetailThreads> calls <gatherThreadHWPC> \n");
+			#endif
+
+
 		PerfWatch::gatherThreadHWPC();
 
+			#ifdef DEBUG_PRINT_PAPI_THREADS
+			fprintf(stderr, "\t<printDetailThreads> calls <gather> \n");
+			#endif
+
 		PerfWatch::gather();
+
+			#ifdef DEBUG_PRINT_PAPI_THREADS
+			fprintf(stderr, "\t<printDetailThreads> prints  \n");
+			#endif
 
 		if (my_rank == 0) {
 			if (is_unit < 2) {
@@ -2051,6 +2097,11 @@ namespace pm_lib {
 	m_time  = save_m_time;
 	m_flop  = save_m_flop;
 	m_time_av  = save_m_time_av;
+
+		#ifdef DEBUG_PRINT_PAPI_THREADS
+		fprintf(stderr, "\t<printDetailThreads> returns  \n");
+		#endif
+
   }
 
 
@@ -2101,6 +2152,9 @@ namespace pm_lib {
 	fprintf(fp, "\t The available POWER_CHOOSER values and their output data are shown below.\n\n");
 
 	if (hwpc_group.platform == "A64FX" ) {
+	
+		fprintf(fp, "\t POWER_CHOOSER=OFF(default):\n");
+		fprintf(fp, "\t\t power consumption report is not produced: \n" );
 	
 		fprintf(fp, "\t POWER_CHOOSER=NODE:\n");
 		fprintf(fp, "\t\t total     : Total of all parts. (CMG + MEMORY + TF+A+U) \n");

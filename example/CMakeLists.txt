@@ -66,17 +66,21 @@ else()
   target_link_libraries(example1 -lPM)
 endif()
 
+# If static papi libraries are available, the following linker line is more portable
+#	target_link_libraries(example1 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+# RedHat 8 default papi comes with shared libraries only. So link as following line.
+#	target_link_libraries(example1 -lpapi_ext -Wl,'-lpapi,-lpfm')
+
 if(OPT_PAPI)
   if(TARGET_ARCH STREQUAL "FUGAKU")
     #	target_link_libraries(example1 -Wl,'-lpapi_ext,-lpapi,-lpfm' -Nnofjprof)
     target_link_libraries(example1 -lpapi_ext -lpapi -lpfm -Nnofjprof)
   elseif(TARGET_ARCH STREQUAL "FX100")
-  # on AICS FX100 static PAPI libs do not match the other system libs, i.e. bonehead system bug.
-  # so the following dynamic libs must be used.
+    # statis papi is not available on FX100, so the following dynamic libs must be used.
     target_link_libraries(example1 -lpapi_ext -Wl,'-lpapi,-lpfm')
   else()
-  ## GNU linker ld options are better passed using -Wl, rather than -B compiler phase option
-    target_link_libraries(example1 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    #	GNU linker ld options are better passed using -Wl, rather than -B compiler phase option
+    target_link_libraries(example1 -lpapi_ext -Wl,'-lpapi,-lpfm')
   endif()
 endif()
 
@@ -124,7 +128,8 @@ if(enable_Fortran)
     elseif(TARGET_ARCH STREQUAL "FX100")
       target_link_libraries(example2 -lpapi_ext -Wl,'-lpapi,-lpfm')
     else()
-      target_link_libraries(example2 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+	  #   assuming that only the dynamic shared papi libraries are available:
+      target_link_libraries(example2 -lpapi_ext -Wl,'-lpapi,-lpfm')
     endif()
   endif()
 
@@ -155,6 +160,8 @@ if(enable_Fortran)
 
   if(TARGET_ARCH STREQUAL "FUGAKU")
     target_link_libraries(example2 --linkfortran )
+  elseif(TARGET_ARCH STREQUAL "Intel")
+    target_link_libraries(example2 -fortlib)
   endif()
 
 endif()
@@ -180,7 +187,7 @@ if(OPT_PAPI)
   elseif(TARGET_ARCH STREQUAL "FX100")
     target_link_libraries(example3 -lpapi_ext -Wl,'-lpapi,-lpfm')
   else()
-    target_link_libraries(example3 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+    target_link_libraries(example3 -lpapi_ext -Wl,'-lpapi,-lpfm')
   endif()
 endif()
 
@@ -220,7 +227,7 @@ if(with_MPI)
     elseif(TARGET_ARCH STREQUAL "FX100")
       target_link_libraries(example4 -lpapi_ext -Wl,'-lpapi,-lpfm')
     else()
-      target_link_libraries(example4 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+      target_link_libraries(example4 -lpapi_ext -Wl,'-lpapi,-lpfm')
     endif()
   endif()
 
@@ -258,7 +265,7 @@ if(with_MPI)
     elseif(TARGET_ARCH STREQUAL "FX100")
       target_link_libraries(example5 -lpapi_ext -Wl,'-lpapi,-lpfm')
     else()
-      target_link_libraries(example5 -lpapi_ext -Wl,'-Bstatic,-lpapi,-lpfm,-Bdynamic')
+      target_link_libraries(example5 -lpapi_ext -Wl,'-lpapi,-lpfm')
     endif()
   endif()
 

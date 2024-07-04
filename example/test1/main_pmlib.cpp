@@ -31,7 +31,6 @@ int main (int argc, char *argv[])
 	int i, j, num_threads;
 
     std::string comments;
-    std::ostringstream ouch; // old C++ notation
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_id);
@@ -57,14 +56,11 @@ int main (int argc, char *argv[])
 
 	PM.initialize();
 
-	//
-	//	calling setProperties() is optional
-	//
-	//	PM.setProperties("Initial-section", PerfMonitor::CALC);
-	//	PM.setProperties("Loop-section", PerfMonitor::COMM, false);
-	//	PM.setProperties("Kernel-Slow", PerfMonitor::CALC);
-	//	PM.setProperties("Kernel-Fast", PerfMonitor::CALC);
-	PM.setProperties("Loop-section", PerfMonitor::COMM);
+	//	setProperties() is optional, and is not necessary in most cases
+	//		PM.setProperties("Initial-section", PerfMonitor::CALC);
+	//		PM.setProperties("Loop-section", PerfMonitor::CALC, false);
+	//		PM.setProperties("Kernel-Slow", PerfMonitor::CALC);
+	//		PM.setProperties("Kernel-Fast", PerfMonitor::CALC);
 
 // checking exclusive section
 	PM.start("Initial-section");
@@ -95,26 +91,13 @@ int main (int argc, char *argv[])
 		PM.stop ("Kernel-Fast", flop_count, 1);
 		spacer();
 
-		//check//	comments = "iteration i:" + std::to_string(i);
-		//check//	PM.printProgress(stdout, comments, 1);
 	}
-
-	//check//	PM.postTrace();
 
 	somekernel();
 	PM.stop("Loop-section", byte_count*(2*3), 1);
 	spacer();
 
 	PM.report(stdout);
-
-	//
-	//	report() is equivalent to the following series of APIs
-	//
-	//	PM.print(stdout, "", "Mrs. Kobe", 0);
-	//	PM.printDetail(stdout, 0);
-	//	PM.printThreads(stdout, 0);
-	//	PM.printLegend(stdout);
-
 	MPI_Finalize();
 	return 0;
 }
@@ -124,7 +107,7 @@ void set_array()
 {
 int i, j, nsize;
 nsize = matrix.nsize;
-#pragma omp parallel
+#pragma omp parallel private(i,j)
 #pragma omp for
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){
@@ -141,7 +124,7 @@ void somekernel()
 int i, j, k, nsize;
 double c1,c2,c3;
 nsize = matrix.nsize;
-#pragma omp parallel
+#pragma omp parallel private(i,j,c1)
 #pragma omp for
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){
@@ -168,7 +151,7 @@ nsize = matrix.nsize;
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){
 		c1=0.0;
-	// some stupid directives to run the loop slower ...
+// some stupid directives to run the loop in no-simd fashion ...
 #pragma loop serial
 #pragma novector
 #pragma nounroll
@@ -176,9 +159,6 @@ nsize = matrix.nsize;
 #pragma loop nosimd
 #pragma loop noswp
 		for (k=0; k<nsize; k++){
-		//	cx	c2=matrix.a2[i][k] * matrix.a2[j][k];
-		//	cx	c3=matrix.b2[i][k] * matrix.b2[j][k];
-		//	cx	c1=c1 + c2+c3;
 		c1 += matrix.a2[i][k]*matrix.a2[j][k] + matrix.b2[i][k]*matrix.b2[j][k];
 		}
 		matrix.c2[i][j] = matrix.c2[i][j] + c1/(float)nsize;
@@ -189,5 +169,5 @@ nsize = matrix.nsize;
 // add some meaningless space, for easier debug with visualization package
 void spacer()
 {
-	for (int i=0; i<10; i++){ set_array(); }
+	for (int i=0; i<3; i++){ set_array(); }
 }

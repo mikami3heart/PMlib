@@ -205,8 +205,12 @@ int my_internal_check_state( HighLevelInfo ** hlstate )
 	int retval;
 	int p_get;
 	HighLevelInfo *state = NULL;
+	//
+	//  Starting from PAPI 6.0, defined macro PAPI_HIGH_LEVEL_TLS is deleted from papi.h
+	//
 
-	p_get = PAPI_get_thr_specific(PAPI_HIGH_LEVEL_TLS, (void **) &state );
+	//	p_get = PAPI_get_thr_specific(PAPI_HIGH_LEVEL_TLS, (void **) &state );
+	p_get = PAPI_get_thr_specific(PAPI_USR1_TLS, (void **) &state );
 	if ( p_get != PAPI_OK || state == NULL ) {
 
 		state = (HighLevelInfo *) malloc(sizeof(HighLevelInfo));
@@ -219,7 +223,8 @@ int my_internal_check_state( HighLevelInfo ** hlstate )
 		state->EventSet = PAPI_NULL;
 		if ( (retval = PAPI_create_eventset(&state->EventSet)) != PAPI_OK )
 			return (retval);
-		if ( (retval = PAPI_set_thr_specific(PAPI_HIGH_LEVEL_TLS, state)) != PAPI_OK )
+		//	if ( (retval = PAPI_set_thr_specific(PAPI_HIGH_LEVEL_TLS, state)) != PAPI_OK )
+		if ( (retval = PAPI_set_thr_specific(PAPI_USR1_TLS, state)) != PAPI_OK )
 			return (retval);
 	}
 	*hlstate = state;

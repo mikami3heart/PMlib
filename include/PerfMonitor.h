@@ -599,13 +599,11 @@ namespace pm_lib {
     ///
     void printDiag(const char* func, const char* fmt, ...)
     {
-      if (my_rank == 0) {
         fprintf(stderr, "\n\n*** PMlib message. PerfMonitor::%s: ", func );
         va_list ap;
         va_start(ap, fmt);
         vfprintf(stderr, fmt, ap);
         va_end(ap);
-      }
     }
 
 

@@ -865,7 +865,7 @@ void PerfWatch::createPapiCounterList ()
   /// PerfMonitor::printProgress() -> ditto
   /// PerfMonitor::postTrace() -> ditto
 
-  ///   PerfWatch::printDetailThreads() -> gatherHWPC() -> sortPapiCounterList()
+  ///   PerfWatch::printDetailThreads() -> gatherThreadHWPC() -> sortPapiCounterList()
   ///   PerfWatch::stop() -> sortPapiCounterList()	// special case when using OTF (#ifdef USE_OTF)
   ///
 
@@ -879,18 +879,8 @@ void PerfWatch::sortPapiCounterList (void)
 	if ( m_time > 0.0 ) { perf_rate = 1.0/m_time; }
 
 #ifdef DEBUG_PRINT_PAPI
-//	#pragma omp barrier
-//	#pragma omp critical
-//	{
-//	if (my_rank == 0) {
-//		fprintf(stderr, "\t<sortPapiCounterList> [%15s], my_rank=%d, my_thread=%d, starting:\n",
-//			m_label.c_str(), my_rank, my_thread);
-//		for (int i = 0; i < 3; i++) {
-//			fprintf(stderr, "\t\t i=%d [%8s] accumu[i]=%ld \n",
-//			i, my_papi.s_sorted[i].c_str(), my_papi.accumu[i]);
-//		}
-//	}
-//	}
+	fprintf(stderr, "\t<sortPapiCounterList> [%15s], my_rank=%d, my_thread=%d, starting:\n",
+		m_label.c_str(), my_rank, my_thread);
 #endif
 
 // if (FLOPS)
@@ -1264,7 +1254,7 @@ void PerfWatch::sortPapiCounterList (void)
 			my_papi.v_sorted[jp] = d_L2_ratio * 100.0;
 			jp++;
 
-			#ifdef DEBUG_PRINT_PAPI
+			#ifdef DEBUG_PRINT_PAPI_THREADS
 			#pragma omp barrier
 			#pragma omp critical
 			if (my_rank == 0) {
@@ -1324,7 +1314,7 @@ void PerfWatch::sortPapiCounterList (void)
 			my_papi.v_sorted[jp] = d_L2_ratio * 100.0;
 			jp++;
 			}
-			#ifdef DEBUG_PRINT_PAPI
+			#ifdef DEBUG_PRINT_PAPI_THREADS
 			#pragma omp barrier
 			#pragma omp critical
 			if (my_rank == 0) {
@@ -1451,18 +1441,18 @@ void PerfWatch::sortPapiCounterList (void)
 // count the number of reported events and derived matrices
 	my_papi.num_sorted = jp;
 
-#ifdef DEBUG_PRINT_PAPI_THREADS
-	#pragma omp barrier
+#ifdef DEBUG_PRINT_PAPI
+	//	#pragma omp barrier
 	#pragma omp critical
 	{
-	if (my_rank == 0) {
 		fprintf(stderr, "\t<sortPapiCounterList> [%15s], my_rank=%d, my_thread=%d, returning m_time=%e\n",
 			m_label.c_str(), my_rank, my_thread, m_time );
+	#ifdef DEBUG_PRINT_PAPI_THREADS
 		for (int i = 0; i < my_papi.num_sorted; i++) {
 			fprintf(stderr, "\t\t i=%d [%8s] v_sorted[i]=%e \n",
 			i, my_papi.s_sorted[i].c_str(), my_papi.v_sorted[i]);
 		}
-	}
+	#endif
 	}
 #endif
 
@@ -1571,7 +1561,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 	fprintf(fp, "\n    PMlib report controll environment variable:\n" );
 	fprintf(fp, "\n");
-	fprintf(fp, "\t PMLIB_REPORT=BASIC:\n");
+	fprintf(fp, "\t PMLIB_REPORT=BASIC(default):\n");
 	fprintf(fp, "\t\t Produce the basic report which contains the averaged timer information, and if available\n");
 	fprintf(fp, "\t\t the measured HWPC event counts and the performance for each of the sections,\n");
 	fprintf(fp, "\t\t and if available the estimated power consumption required to execute the section.\n");
