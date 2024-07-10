@@ -123,7 +123,7 @@ void PerfWatch::initializeHWPC ()
 
 	read_cpu_clock_freq(); /// API for reading processor clock frequency.
 
-	if (hwpc_group.env_str_hwpc == "USER" ) return;	// Is this a correct return?
+	if (hwpc_group.env_str_hwpc == "USER" ) return;	// Is this a correct return? Yes!
 
 #ifdef USE_PAPI
 	int i_papi;
@@ -206,6 +206,7 @@ void PerfWatch::cleanupHWPC ()
 #ifdef _OPENMP
 #ifdef USE_PAPI
 	bool root_in_parallel;
+	if (hwpc_group.env_str_hwpc == "USER" ) return;
 
 	#pragma omp barrier
 	root_in_parallel = omp_in_parallel();
