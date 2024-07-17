@@ -4,6 +4,15 @@
 
 
 ---
+- 2024-07-17 Version 9.2.0
+  - Support for half precision arithmetic is added.
+
+---
+- 2024-07-04 Version 9.1.0
+  - Modified openmp directives in example1, fixing rare errors on Fugaku.
+  - skip cleanupHWPC() in USER mode
+
+---
 - 2023-03-20 Version 9.0.1
   - correction to gather the BANDWIDTH hardware counter values, supporting more than 1 process
     on A64FX CMG.

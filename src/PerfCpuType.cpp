@@ -440,7 +440,8 @@ void PerfWatch::createPapiCounterList ()
 
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
-				hwpc_group.number[I_flops] += 2;
+				hwpc_group.number[I_flops] += 3;
+				papi.s_name[ip] = "FP_OPS"; papi.events[ip] = PAPI_FP_OPS; ip++;
 				papi.s_name[ip] = "SP_OPS"; papi.events[ip] = PAPI_SP_OPS; ip++;
 				papi.s_name[ip] = "DP_OPS"; papi.events[ip] = PAPI_DP_OPS; ip++;
 			}
@@ -656,15 +657,19 @@ void PerfWatch::createPapiCounterList ()
 		if (hwpc_group.platform == "A64FX" ) {
 			if (hwpc_group.i_platform == 21 ) {
 
-				hwpc_group.number[I_vector] += 4;
-				papi.s_name[ip] = "FP_DP_SCALE_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SVE_op"; ip++;
-				papi.s_name[ip] = "FP_DP_FIXED_OPS_SPEC";
-				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_FIX_op"; ip++;
+				hwpc_group.number[I_vector] += 6;
+				papi.s_name[ip] = "FP_HP_SCALE_OPS_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "HP_SVE_op"; ip++;
+				papi.s_name[ip] = "FP_HP_FIXED_OPS_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "HP_FIX_op"; ip++;
 				papi.s_name[ip] = "FP_SP_SCALE_OPS_SPEC";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_SVE_op"; ip++;
 				papi.s_name[ip] = "FP_SP_FIXED_OPS_SPEC";
 				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "SP_FIX_op"; ip++;
+				papi.s_name[ip] = "FP_DP_SCALE_OPS_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_SVE_op"; ip++;
+				papi.s_name[ip] = "FP_DP_FIXED_OPS_SPEC";
+				my_papi_name_to_code( papi.s_name[ip].c_str(), &papi.events[ip]); papi.s_name[ip] = "DP_FIX_op"; ip++;
 		
 			}
 		}
@@ -891,12 +896,40 @@ void PerfWatch::sortPapiCounterList (void)
 		ip = hwpc_group.index[I_flops];
 		jp=0;
 
-		for(int i=0; i<hwpc_group.number[I_flops]; i++)
-		{
+    	if (hwpc_group.platform == "A64FX" ) {
+			if (hwpc_group.i_platform == 21 ) {
+			//	A64FX supports sort half/single/double precision F.P. operations.
+			//	There can be several ways to calculate f.p. ops. out of PAPI. Here we take a simple one.
+			//  The events have been defined as below. We will modify the first entry.
+			//		papi.s_name[ip] == "FP_OPS"; papi.events[ip] == PAPI_FP_OPS;
+			//		papi.s_name[ip+1] == "SP_OPS"; papi.events[ip+1] == PAPI_SP_OPS;
+			//		papi.s_name[ip+2] == "DP_OPS"; papi.events[ip+2] == PAPI_DP_OPS;
+
+			for(int i=0; i<hwpc_group.number[I_flops]; i++)
+			{
+    			if (i == 0 ) {
+				// save PAPI_FP_OPS value, and refill the arrays with half precision data
+					counts = my_papi.accumu[ip] ;
+					my_papi.s_sorted[jp] = "HP_OPS";	// HP_OPS = FP_OPS - SP_OPS - DP_OPS
+					my_papi.v_sorted[jp] = counts - my_papi.accumu[ip+1] - my_papi.accumu[ip+2];
+					ip++;jp++;
+				} else {
+					my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
+					my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
+					ip++;jp++;
+				}
+			}
+
+			}
+		} else {
+			for(int i=0; i<hwpc_group.number[I_flops]; i++)
+			{
 			my_papi.s_sorted[jp] = my_papi.s_name[ip] ;
 			counts += my_papi.v_sorted[jp] = my_papi.accumu[ip] ;
 			ip++;jp++;
+			}
 		}
+
 		my_papi.s_sorted[jp] = "Total_FP";
 		my_papi.v_sorted[jp] = counts;
 		jp++;
@@ -1047,7 +1080,8 @@ void PerfWatch::sortPapiCounterList (void)
 		double fp_dp1, fp_dp2, fp_dp4, fp_dp8, fp_dp16;
 		double fp_total, fp_vector;
 		double vector_percent;
-		double fp_spv, fp_dpv;
+		double fp_hpv, fp_spv, fp_dpv;
+		double fp_hp1;
 
 		vector_percent = 0.0;
 		fp_vector = 0.0;
@@ -1138,59 +1172,39 @@ void PerfWatch::sortPapiCounterList (void)
 			if (hwpc_group.i_platform == 21 ) {
 
 			//	total OPS =  vector OPS + scalar OPS = PAPI_FP_OPS
-			//		vector OPS = operations by SVE instructions = vector DP ops + vector SP ops
-			//		scalar OPS = operations by scalar and armv8simd instructions = scalar DP ops + scalar SP ops
+			//		vector OPS = operations by SVE instructions = sum of vector HP/SP/DP ops.
+			//		scalar OPS = operations by scalar and armv8simd instructions = sum of scalar HP/SP/DP ops.
 			//
-			//	vector OPS = 4*FP_SCALE_OPS_SPEC = 4*FP_DP_SCALE_OPS_SPEC + 4*FP_SP_SCALE_OPS_SPEC
-			//	scalar OPS = FP_FIXED_OPS_SPEC = FP_DP_FIXED_OPS_SPEC + FP_SP_FIXED_OPS_SPEC
-			//	The number "4" in the above formula has the special meaning in arm SVE context.
+			//	SVE f.p. operations are counted uniquely, and needs to scale 4x (512/128) to obtain actual ops
+			//	i.e. _SCALE_OPS_ values should be multiplied by 4
 			//
-			//	The OPS can also be grouped into FMA and non-FMA ops.
+			//	vector OPS = 4*FP_SCALE_OPS_SPEC =  4*FP_HP_SCALE_OPS_SPEC + 4*FP_SP_SCALE_OPS_SPEC + 4*FP_DP_SCALE_OPS_SPEC
+			//	scalar OPS = FP_FIXED_OPS_SPEC = HP_DP_FIXED_OPS_SPEC + FP_SP_FIXED_OPS_SPEC + FP_DP_FIXED_OPS_SPEC
+			//	The number "4 == 512/128" in the above formula has the special meaning in A64FX SVE context.
+			//	HP stands for Half Precision, SP stands for Single Precision, DP stands for Double Precision
+			//
+			//	The OPS can also be grouped into FMA and non-FMA ops. On A64FX, however, there is only
+			//	one counter, FP_FMA_SPEC, available for counting FMA operations, so it may not help much.
 			//		vector OPS = FMA vector OPS + non-FMA vector OPS
 			//		scalar OPS = FMA scalar OPS + non-FMA scalar OPS
-			//	The total number of FMA instructions is available, but the ratio of FMA v.s. non-FMA is not available.
-			//	So roughly averaged approximation is applied for both DP and SP
-			//		(FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) = RF
-			//		x1 : #of_inst_vector_FMA_DP	//	vector FMA f.p. ops in DP = 16*x1
-			//		y1 : #of_inst_vector_FMA_SP	//	vector FMA f.p. ops in SP = 32*y1
-			//		x2 : #of_inst_scalar_FMA_DP	//	scalar FMA f.p. ops in DP = 2*x2
-			//		y2 : #of_inst_scalar_FMA_SP	//	scalar FMA f.p. ops in SP = 2*y2
+			//		sve FMA f.p. ops in DP = 16*vec_inst
+			//		sve FMA f.p. ops in SP = 32*vec_inst
+			//		sve FMA f.p. ops in HP = 64*vec_inst
+			//		scalar FMA f.p. ops = 2*fp_inst for all of HP/SP/DP
 
-				//	vDP : fops_vector_DP = vector Double Precision floating point operations
-				//	vSP : fops_vector_SP = vector Single Precision floating point operations
-				//	sDP : fops_scalar_DP = scalar Double Precision floating point operations
-				//	sSP : fops_scalar_SP = scalar Single Precision floating point operations
-
-				// vDP = 4*FP_DP_SCALE_OPS_SPEC				// formula-(1)	ops.
-				// vSP = 4*FP_SP_SCALE_OPS_SPEC				// formula-(2)	ops.
-				// sDP = FP_DP_FIXED_OPS_SPEC				// formula-(3)	ops.
-				// sSP = FP_SP_FIXED_OPS_SPEC				// formula-(4)	ops.
-				// FMA ops = 16*x1 + 32*y1 + 2*x2 + 2*y2			// formula-(5)	FMA ops.
-				// FMA instructions = FMA_INS = x1 + y1 + x2 + y2	// formula-(6)	FMA inst.
-				// 16*x1/vDP = 32*y1/vSP = 2*x2/sDP = 2*y2/sSP = RF	// formula-(7)	// approximation
-					// x1 = RF*vDP/16
-					// y1 = RF*vSP/32
-					// x2 = RF*sDP/2
-					// y2 = RF*sSP/2
-				// put into formula-(6)
-				// FMA_INS = RF*(vDP/16 + vSP/32 + sDP/2 + sSP/2)
-				// RF = FMA_INS / (vDP/16 + vSP/32 + sDP/2 + sSP/2)	// formula-(12)
-				// put into formula-(5)
-				// FMA ops = RF*(vDP+vSP+sDP+sSP) == RF*PAPI_FP_OPS
-
-
-			// SVE f.p. operations are counted uniquely, and needs to scale 4x (512/128) to obtain actual ops
-			//	i.e. _SCALE_OPS_ values should be multiplied by 4
-				fp_dpv  = 4 * my_papi.accumu[ip] ;
-				fp_dp1  = my_papi.accumu[ip+1] ;
+				fp_hpv  = 4 * my_papi.accumu[ip] ;
+				fp_hp1  = my_papi.accumu[ip+1] ;
 				fp_spv  = 4 * my_papi.accumu[ip+2] ;
 				fp_sp1  = my_papi.accumu[ip+3] ;
-				fp_vector =                   fp_dpv + fp_spv ;
-				fp_total  = fp_dp1 + fp_sp1 + fp_dpv + fp_spv ;
+				fp_dpv  = 4 * my_papi.accumu[ip+4] ;
+				fp_dp1  = my_papi.accumu[ip+5] ;
+				fp_vector =                            fp_hpv + fp_spv + fp_dpv ;
+				fp_total  = fp_hp1 + fp_sp1 + fp_dp1 + fp_hpv + fp_spv + fp_dpv ;
 
 			// correction of v_sorted values
-				my_papi.v_sorted[ip] = fp_dpv;
+				my_papi.v_sorted[ip] = fp_hpv;
 				my_papi.v_sorted[ip+2] = fp_spv;
+				my_papi.v_sorted[ip+4] = fp_dpv;
 
 			}
 			// calculate vector_percent for both of exclusive and inclusive sections
@@ -1627,6 +1641,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
+	fprintf(fp, "\t\t HP_OPS:    half precision floating point operations\n");
 	fprintf(fp, "\t\t SP_OPS:    single precision floating point operations\n");
 	fprintf(fp, "\t\t DP_OPS:    double precision floating point operations\n");
 	}
@@ -1711,10 +1726,12 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	} else
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t\t DP_SVE_op:  double precision f.p. ops by SVE instructions\n");
-	fprintf(fp, "\t\t DP_FIX_op:  double precision f.p. ops by scalar/armv8 instructions\n");
+	fprintf(fp, "\t\t HP_SVE_op:  half precision f.p. ops by SVE instructions\n");
+	fprintf(fp, "\t\t HP_FIX_op:  half precision f.p. ops by scalar/armv8 instructions\n");
 	fprintf(fp, "\t\t SP_SVE_op:  single precision f.p. ops by SVE instructions\n");
 	fprintf(fp, "\t\t SP_FIX_op:  single precision f.p. ops by scalar/armv8 instructions\n");
+	fprintf(fp, "\t\t DP_SVE_op:  double precision f.p. ops by SVE instructions\n");
+	fprintf(fp, "\t\t DP_FIX_op:  double precision f.p. ops by scalar/armv8 instructions\n");
 	fprintf(fp, "\t\t Total_FP:   total floating point operations \n");
 	fprintf(fp, "\t\t Vector_FP:  floating point operations by vector instructions\n");
 	fprintf(fp, "\t\t [Vector %%]: percentage of vectorized f.p. operations\n");
@@ -1839,13 +1856,10 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	}
 
 	if (hwpc_group.platform == "A64FX" ) {
-	fprintf(fp, "\t Special remarks for A64FX VECTOR report.\n");
-	fprintf(fp, "\t\t [FMA_ops %%] is a roughly approximated number using the following assumption. \n");
-	fprintf(fp, "\t\t\t (FMA vector OPS)/(vector OPS) = (FMA scalar OPS)/(scalar OPS) for both DP and SP \n");
 	fprintf(fp, "\t Special remarks for A64FX BANDWIDTH report.\n");
 	fprintf(fp, "\t\t CMG_bus_RD and CMG_bus_WR both count the CMG aggregated values, not core.\n");
-	fprintf(fp, "\t\t So, Thread Report statistics shows the values in redundant manner.\n");
-	fprintf(fp, "\t\t Basic Report and Process Report statistics both show the measured value.\n");
+	fprintf(fp, "\t\t Basic Report and Process Report both show the appropriate statistics.\n");
+	fprintf(fp, "\t\t But Thread Report shows the values in redundant manner.\n");
 	}
 
 #endif // USE_PAPI
