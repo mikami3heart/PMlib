@@ -124,7 +124,7 @@ void somekernel()
 int i, j, k, nsize;
 double c1,c2,c3;
 nsize = matrix.nsize;
-#pragma omp parallel private(i,j,c1)
+#pragma omp parallel private(i,j,k,c1)
 #pragma omp for
 	for (i=0; i<nsize; i++){
 	for (j=0; j<nsize; j++){

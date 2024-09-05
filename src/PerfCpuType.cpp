@@ -1569,7 +1569,6 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 // TODO: We should simplify these too many fprintf() calls into one fprintf() call. sometime...
 
-	const PAPI_hw_info_t *hwinfo = NULL;
 	std::string s_model_string;
 	std::string s_vendor_string;
 	using namespace std;
@@ -1606,6 +1605,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 
 
 #ifdef USE_PAPI
+	const PAPI_hw_info_t *hwinfo = NULL;
 	fprintf(fp, "\n    Symbols in PMlib hardware performance counter (HWPC) report:\n" );
 	hwinfo = PAPI_get_hardware_info();
 	if (hwinfo == NULL) {
