@@ -9,6 +9,7 @@ and private class APIs.
 	Doxyfile
 	api_cpp/
 	api_fortran/
+	api_C/
 
 The HTML format documentation for Web browser viewing can be generated
 in simple steps as described below.

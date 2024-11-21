@@ -710,33 +710,41 @@ namespace pm_lib {
 		// Detect A64FX BANDWIDTH event whose counter values are counter per CMG, not separated per core
 		if ( ( is_unit == 2) && ( hwpc_group.i_platform == 21 ) ) {
 
+			// The logic here after assumes that we are running on A64FX cpu in Fujitsu PJM job software
+			// The environment variables PJM_PROC_BY_NODE and PLE_RANK_ON_NODE are read and used.
+
 			int np_node;			//	the number of processes on this node
 			int my_rank_on_node;	// 	the local rank number of this process on this node
 
+#ifdef DISABLE_MPI
+			np_node = 1;
+			my_rank_on_node = 0;
+#else
 			char* cp_env;
 			cp_env = std::getenv("PJM_PROC_BY_NODE");
 			if (cp_env == NULL) {
 				fprintf (stderr, "\n\t *** PMlib warning. BANDWIDTH option for A64FX is only supported on Fugaku.\n");
 				fprintf (stderr, "\t\t The environment variable PJM_PROC_BY_NODE is not set. \n");
-				fprintf (stderr, "\t\t The report will assume np_node(the number of processes per node) = 1. \n");
+				fprintf (stderr, "\t\t PMlib report is likely to be incorrect. \n");
+				// The report will assume np_node(the number of processes per node) = 1
 				np_node = 1;
 			} else {
 				np_node = atoi(cp_env);
 				if (np_node < 1 || np_node > 48) {
-				fprintf (stderr, "\n\t *** PMlib warning. BANDWIDTH option for A64FX is only supported on Fugaku.\n");
 					fprintf (stderr, "\t\t The number of processes per node should be 1 <= np_node <= 48,\n");
 					fprintf (stderr, "\t\t but the value is set as %d. \n", np_node);
-					fprintf (stderr, "\t\t The report will assume np_node=1. \n");
+					fprintf (stderr, "\t\t PMlib report is likely to be incorrect. \n");
+					// The report will assume np_node(the number of processes per node) = 1
 					np_node = 1;
 				} else {
 					// np_node looks OK
 				}
 			}
 			cp_env = std::getenv("PLE_RANK_ON_NODE");
+			// The environment variables PLE_RANK_ON_NODE is defined in MPI environment only
 			if (cp_env == NULL) {
-				// unable to obtain the rank number of this process
-				fprintf (stderr, "\n\t *** PMlib warning. The environment variable PLE_RANK_ON_NODE is not set. \n");
-				fprintf (stderr, "\t\t The report will assume there is only 1 process on this node. \n");
+				//	fprintf (stderr, "\n\t *** PMlib warning. The environment variable PLE_RANK_ON_NODE is not set.\n");
+				// unable to obtain the rank number of this process. this should be serial process.
 				my_rank_on_node = 0;
 			} else {
 				my_rank_on_node = atoi(cp_env);
@@ -749,6 +757,7 @@ namespace pm_lib {
 					//  my_rank_on_node looks OK
 				}
 			}
+#endif
 			// by now, two important values are set as 1 <= np_node <= 48 and 0 <= my_rank_on_node <= 47
 			// The normal packed thread affinity is assumed. scattered affinity is not currently supported.
 			double share_ratio = 0.0;

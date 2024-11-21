@@ -4,6 +4,12 @@
 
 
 ---
+- 2024-11-17 Version 10.0
+  - Unify the papi_ext and power_ext libraries into libPMa (and libPMmpi.a)
+  - Apply spack package manager on Fugaku
+  - Newly developed Python API is temporarily maintained in a separate repository
+
+---
 - 2024-07-17 Version 9.2.0
   - Support for half precision arithmetic is added.
 

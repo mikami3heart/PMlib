@@ -22,9 +22,9 @@ link_directories(${POWER_DIR}/lib64)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GNU_SOURCE -DUSE_POWER")
 
-add_library(power_ext STATIC power_ext_PerfWatch.cpp)
+if(with_MPI)
+target_sources(PMmpi PUBLIC power_ext_PerfWatch.cpp)
+else()
+target_sources(PM PUBLIC power_ext_PerfWatch.cpp)
+endif()
 
-set_target_properties(power_ext PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(power_ext ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
-
-install(TARGETS power_ext DESTINATION lib)

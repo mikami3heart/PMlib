@@ -30,20 +30,24 @@ long long flpops;
 #else
 	num_threads  = 1;
 #endif
-	if(my_id == 0) fprintf(stderr, "<main> program\n");
+	if(my_id == 0) fprintf(stdout, "<main> program\n");
 
 	PM.initialize();
 
-	if(my_id == 0) fprintf(stderr, "starting stream benchmark\n");
-	PM.start("stream_check");
+	if(my_id == 0) fprintf(stdout, "starting stream benchmark\n");
 	t1=MPI_Wtime();
+	for (int i=0; i<30; i++)
+	//	for (int i=0; i<2; i++)
+	{
+	PM.start("stream_check");
 	stream();
-	t2=MPI_Wtime();
-	MPI_Barrier(MPI_COMM_WORLD);
 	PM.stop ("stream_check");
-	if(my_id == 0) fprintf(stderr, "stream finished in %f seconds\n", t2-t1);
+	MPI_Barrier(MPI_COMM_WORLD);
+	}
+	t2=MPI_Wtime();
+	if(my_id == 0) fprintf(stdout, "stream finished in %f seconds\n", t2-t1);
 
-PM.report(stderr);
+PM.report(stdout);
 
 MPI_Finalize();
 return 0;

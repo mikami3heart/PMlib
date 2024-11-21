@@ -37,35 +37,28 @@ long long flpops;
 #else
 	num_threads  = 1;
 #endif
-	if(my_id == 0) fprintf(stderr, "<main> started. %d PEs x %d Threads\n",
-		npes, num_threads);
+	fprintf(stderr, "<main> started. %d PEs x %d Threads\n", npes, num_threads);
 
 	PM.initialize();
-	//	num_threads  = omp_get_max_threads();
-	(void)PM.getVersionInfo();
-
-	if(my_id == 0) fprintf(stderr, "starting benchmark\n");
-	t1=MPI_Wtime();
 
 	PM.start("sub_initialize");
 	sub_initialize_();
 	PM.stop("sub_initialize");
 
+	//	t1=MPI_Wtime();
 	//	for (int i=0; i<1; i++) {	// 10 seconds per call
-	for (int i=0; i<30; i++) {
+	//	for (int i=0; i<3; i++) {
 	PM.start("sub_dgemm");
 	sub_dgemm_();
 	PM.stop("sub_dgemm");
-	}
+	//	}
+	//	t2=MPI_Wtime();
 
-	t2=MPI_Wtime();
-	MPI_Barrier(MPI_COMM_WORLD);
-	if(my_id == 0) fprintf(stderr, "benchmark finished in %f seconds\n", t2-t1);
+	fprintf(stderr, "<main>  finished in %f seconds\n", t2-t1);
 
-	//	PM.print(stdout, "", "", 0);
-PM.report(stdout);
+	PM.report(stdout);
 
-MPI_Finalize();
+	MPI_Finalize();
 return 0;
 }
 

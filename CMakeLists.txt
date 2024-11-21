@@ -39,7 +39,7 @@
 # -D enable_PreciseTimer={yes|no}
 #
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.20)
 
 
 #######
@@ -83,8 +83,8 @@ cmake_policy(SET CMP0012 NEW)
 
 
 #######
-set(PROJECT_VERSION "9.2.0")
-set(LIB_REVISION "20240717_1500")
+set(PROJECT_VERSION "10.0.2")
+set(LIB_REVISION "20241114_1500")
 
 message(" ")
 message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
@@ -296,12 +296,28 @@ configure_file( include/pmVersion.h.in ${PROJECT_BINARY_DIR}/include/pmVersion.h
 # Install files
 #######
 
+if(with_MPI)
+  install(TARGETS PMmpi DESTINATION lib)
+else()
+  install(TARGETS PM DESTINATION lib)
+endif()
+
 install(FILES  ChangeLog.md
                Readme.md
                License.txt
                ${PROJECT_BINARY_DIR}/CMakeCache.txt
         DESTINATION share)
 
+
+install(FILES ${PROJECT_SOURCE_DIR}/include/mpi_stubs.h
+              ${PROJECT_SOURCE_DIR}/include/PerfMonitor.h
+              ${PROJECT_SOURCE_DIR}/include/PerfWatch.h
+              ${PROJECT_SOURCE_DIR}/include/pmlib_otf.h
+              ${PROJECT_SOURCE_DIR}/include/pmlib_papi.h
+              ${PROJECT_SOURCE_DIR}/include/pmlib_power.h
+              ${PROJECT_SOURCE_DIR}/include/pmlib_api_C.h
+              ${PROJECT_BINARY_DIR}/include/pmVersion.h
+        DESTINATION include )
 
 #######
 # Installer

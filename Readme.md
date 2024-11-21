@@ -1,12 +1,12 @@
 # PMlib - Performance Monitor library
 
-* Copyright (c) 2010-2011 VCAD System Research Program, RIKEN. All rights reserved.
 * Copyright (c) 2012-2024 RIKEN Center for Computational Science (R-CCS). All rights reserved.
 * Copyright (c) 2016-2024 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
+* Copyright (c) 2010-2011 VCAD System Research Program, RIKEN. All rights reserved.
 
 ## OUTLINE
 
-This library records the statistics information of run-time performance and the trace information of a user code and reports its summary. The PMlib is able to use for both serial and parallel environments including hybrid(OpenMP & MPI) code. In addition, PAPI interface allows us to access the information of build-in hardware counter.
+This library records the statistics information of run-time performance and the trace information of a user code and reports its summary. The PMlib is able to use for both serial and parallel environments including hybrid(OpenMP & MPI) code. PMlib integrates PAPI HWPC(hardware performance counter) APIs and Power APIs internally, and produces HPC oriented statistics reports as controlled by the environment variables.
 
 ## SOFTWARE REQUIREMENT
 - Linux OS or UNIX OS
@@ -20,9 +20,11 @@ This library records the statistics information of run-time performance and the 
 Although MPI and PAPI libraries are optional, they provide the essential multiprocessing capability
 and the hardware performance measurement capability, so are strongly recommended to be included in PMlib
 building process.
+Currently, PMlib APIs for Python are maintained in separate repository at
+https://github.com/mikami3heart/PMlib-pybind
 
 
-## INGREDIENTS
+## PMLIB PACKAGE INGREDIENTS
 ~~~
 ChangeLog         History of development
 License.txt       License to apply
@@ -46,12 +48,12 @@ src_otf_ext/      PMlib Extension of Open Tracer Format interface
 
 Before starting the installation, users should confirm if the software requirement is met.  
 Then, download the PMlib package tar ball to some directory and unpack it.
-The distribution files can be found under the directory PMlib-${version}. Current version is 9.1.
+The distribution files can be found under the directory PMlib-${version}. Current version is 10.0.
 If the user downloads the tar ball to ${HOME}/pmlib and unpack it there, the distribution
-directory becomes ${HOME}/pmlib/PMlib-9.1.  
+directory becomes ${HOME}/pmlib/PMlib-10.0.
 Set the shell variable PACKAGE\_DIR pointing to such distribution directory.
 ```
-	PACKAGE_DIR=${HOME}/pmlib/PMlib-9.1
+	PACKAGE_DIR=${HOME}/pmlib/PMlib-10.0
 ```  
 The installation will proceed under the subdirectory ${PACKAGE\_DIR}/BUILD.  
 Users should also set the shell variable PMLIB\_DIR pointing to the installation destination directory.
@@ -168,11 +170,43 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 See BUILD OPTION section in CMakeLists.txt for details.
 
 
-## Cmake Examples
+### Cmake Examples
 
-### INTEL/GNU/PGI compiler on Intel Xeon server
+#### Supercomputer Fugaku clang mode compiler
 
-####
+##### MPI version, cross compiling on login node
+
+~~~
+cmake command example for supercomputer Fugaku - login node clang mode MPI x OpenMP
+
+$ CXXFLAGS="--std=c++11 -Nclang -Kocl -Nnofjprof -DUSE_PRECISE_TIMER -Nfjcex "
+$ CFLAGS="--std=c11 -Nclang -Kocl -Nnofjprof "
+$ FFLAGS="-Kocl -Nnofjprof "
+$ PAPI_DIR=/opt/FJSVxos/devkit/aarch64/rfs/usr
+$ PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib
+$ PACKAGE_DIR=${HOME}/pmlib/PMlib-9.1
+$ cd $PACKAGE_DIR
+$ mkdir -p BUILD-MPI
+$ cd BUILD-MPI
+$ cmake -DINSTALL_DIR=${PMLIB_DIR} \
+		-DCMAKE_CXX_FLAGS="${CXXFLAGS} " \
+		-DCMAKE_C_FLAGS="${CFLAGS} " \
+		-DCMAKE_Fortran_FLAGS="${FFLAGS} " \
+		-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fugaku.cmake \
+		-Denable_OPENMP=yes \
+		-Dwith_MPI=yes \
+		-Dwith_PAPI="${PAPI_DIR}" \
+		-Dwith_POWER=yes \
+		-Dwith_example=yes \
+		-Denable_Fortran=yes \
+		../
+$ make
+$ make install
+~~~
+<br>
+
+#### INTEL/GNU/PGI compiler on Intel Xeon server
+
 ##### serial version
 
 Single process (non-MPI) with possible OpenMP thread parallel version.  
@@ -285,76 +319,36 @@ $ make install
 ~~~
 <br>
 
-### Supercomputer Fugaku clang mode compiler
 
-##### MPI version, cross compiling on login node
 
-~~~
-cmake command example for supercomputer Fugaku - login node clang mode MPI x OpenMP
+## HOW TO COMPILE AND RUN
 
-$ CXXFLAGS="--std=c++11 -Nclang -Kocl -Nnofjprof -DUSE_PRECISE_TIMER -Nfjcex "
-$ CFLAGS="--std=c11 -Nclang -Kocl -Nnofjprof "
-$ FFLAGS="-Kocl -Nnofjprof "
-$ PAPI_DIR=/opt/FJSVxos/devkit/aarch64/rfs/usr
-$ PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib
-$ PACKAGE_DIR=${HOME}/pmlib/PMlib-9.1
-$ cd $PACKAGE_DIR
-$ mkdir -p BUILD-MPI
-$ cd BUILD-MPI
-$ cmake -DINSTALL_DIR=${PMLIB_DIR} \
-		-DCMAKE_CXX_FLAGS="${CXXFLAGS} " \
-		-DCMAKE_C_FLAGS="${CFLAGS} " \
-		-DCMAKE_Fortran_FLAGS="${FFLAGS} " \
-		-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fugaku.cmake \
-		-Denable_OPENMP=yes \
-		-Dwith_MPI=yes \
-		-Dwith_PAPI="${PAPI_DIR}" \
-		-Dwith_POWER=yes \
-		-Dwith_example=yes \
-		-Denable_Fortran=yes \
-		../
-$ make
-$ make install
-~~~
-<br>
+### DOCUMENTS FOR COMPILING AND RUNNING THE APPLICATION WITH PMLIB
 
-### FUJITSU FX100 server
+There are several documents explaining how to build and run the application
+with PMlib.
 
 ~~~
-cmake command example for FX100
+doc/tutorial/Introducing-PMlib-20241114.pdf 
+	: overview including how to code, compile and execute the application
+	  using PMlib. report example and symbol notation
 
-$ BUILD_DIR=${PACKAGE_DIR}/BUILD_DIR
-$ mkdir -p $BUILD_DIR
-$ cd $BUILD_DIR; if [ $? != 0 ] ; then echo '@@@ Directory error @@@'; exit; fi
-$ CXXFLAGS="-std=c++11 "
-$ CFLAGS=" "
-$ FFLAGS="-cpp "
-$ cmake -DINSTALL_DIR=${PMLIB_DIR} \
-		-DCMAKE_CXX_FLAGS="${CXXFLAGS} " \
-		-DCMAKE_C_FLAGS="${CFLAGS} " \
-		-DCMAKE_Fortran_FLAGS="${FFLAGS} " \
-		-DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain_fx100.cmake \
-		-Denable_OPENMP=yes \
-		-Dwith_MPI=yes \
-		-Dwith_PAPI=yes \
-		-Dwith_example=yes \
-		-Denable_Fortran=yes \
-		../
+doc/scripts/
+	: compile and run jobscript examples for user applications
+	: cmake script examples for PMlib building
+
+doc/Readme.md : How to generate the detail API document with Doxygen
 ~~~
-            
+
+* If you specify the cmake option by `-Denable_example=yes`, the test programs
+under the example direcoty are built as example1,2,..,5 executables.
+
+* More example source programs, compile and run scripts, some logs can be found
+under doc/ directory.
 
 
-## RUNNING THE APPLICATION WITH PMLIB
 
-There are several documents explaining how to run the application with PMlib, and how to understand the output information.
-Currently, they are all written in Japanese.
-
-Readme.md      : This document
-doc/Readme.md  : How to generate the detail API specification with Doxygen
-doc/tutorial/PMlib-Getting-Started.pdf      : Quick start guide
-
-
-## RUN TIME ENVIRONMENT VARIABLES
+### RUN TIME ENVIRONMENT VARIABLES
 
 When running applications linked with PMlib, the following environment variables can be set to the shell.
 
@@ -366,7 +360,7 @@ The value DETAIL will provide the statistics report for all the processes.
 The value FULL will provide the statistics report for all the threads of all the processes.
 Note that the amount of the report is decided by the number of processes, the number of threads, the choice of HWPC_CHOOSER.
 
-`HWPC_CHOOSER=(FLOPS|BANDWIDTH|VECTOR|LOADSTORE|CACHE|CYCLE)`
+`HWPC_CHOOSER=(FLOPS|BANDWIDTH|VECTOR|LOADSTORE|CACHE|CYCLE|USER)`
 
 If this environment variable is set, PMlib automatically detects the PAPI based hardware counters. If this environment variable is not set, the HWPC counters are not reported.
 To enable this feature, PMlib must be built with PAPI option enabled.
@@ -402,18 +396,7 @@ See the next environment variable `OTF_FILENAME`. If the value is "off" or not d
 The value of `${OTF_FILENAME}` is used to prefix the OTF file names if the value of previous `${OTF_TRACING}` has been set to "on" or "full". If this environment variable is not set, the default value of `"pmlib_optional_otf_files"` is used to prefix the OTF file names.
 
 
-## EXAMPLES
-
-* If you specify the test option by `-Denable_example=yes`, you can
-execute the intrinsic tests by;
-
-	`$ make test` or `$ ctest`
-
-* The detailed results are written in `BUILD/Testing/Temporary/LastTest.log` file.
-Meanwhile, the summary is displayed for stdout.
-
-
-## Remark on PAPI interface
+### Remark on PAPI interface
 
 Note that the default PAPI library provided with distro Operating System may not be best built for the
 specific CPU type. In such case, users may choose to build PAPI library using the latest distribution
