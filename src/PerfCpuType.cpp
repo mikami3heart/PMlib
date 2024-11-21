@@ -1053,7 +1053,7 @@ void PerfWatch::sortPapiCounterList (void)
 				my_papi.v_sorted[jp] = d_Bytes_RD ;
 				jp++;
 
-				my_papi.s_sorted[jp] = "WD [Bytes]" ;
+				my_papi.s_sorted[jp] = "WR [Bytes]" ;
 				my_papi.v_sorted[jp] = d_Bytes_WR ;
 				jp++;
 
@@ -1680,7 +1680,7 @@ void PerfWatch::outputPapiCounterLegend (FILE* fp)
 	fprintf(fp, "\t\t CMG_bus_RD:  CMG local memory read counts\n");
 	fprintf(fp, "\t\t CMG_bus_WR:  CMG local memory write counts\n");
 	fprintf(fp, "\t\t RD [Bytes]:  CMG local memory read bytes\n");
-	fprintf(fp, "\t\t CMG_bus_WR:  CMG local memory write bytes\n");
+	fprintf(fp, "\t\t WR [Bytes]:  CMG local memory write bytes\n");
 	fprintf(fp, "\t\t Mem [B/s]:  CMG local memory read&write bandwidth \n");
 	fprintf(fp, "\t\t [Bytes]  :  CMG local memory read&write bytes\n");
 	}

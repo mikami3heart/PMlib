@@ -873,7 +873,7 @@ namespace pm_lib {
   /// - [2] merge thread serial/parallel sections
   /// - [3] select the type of the report and start producing the report
   ///
-  /// @param[in] FILE* fc     output file pointer, most likely stdout
+  /// @param[in] FILE* fp     C++ output file pointer, most likely stdout
   ///
   void PerfMonitor::report(FILE* fp)
   {
@@ -936,6 +936,35 @@ namespace pm_lib {
   }
 
 
+  //> override version of report()
+  ///   PMlib report controll routine for outside parallel regions
+  ///	@brief
+  /// This is a controll routine for reporting the stats outside parallel regions.
+  /// For reporting the stats inside of parallel regions, call alternative routine
+  /// PerfReport::report defined in SupportReportCPP.cpp
+  /// 
+  /// - [1] stop the Root section
+  /// - [2] merge thread serial/parallel sections
+  /// - [3] select the type of the report and start producing the report
+  ///
+  /// @param[in] std::string filename     output file name. If "" (NULL),
+  ///                                     then the report is written to stdout.
+  ///
+  void PerfMonitor::report(std::string filename)
+  {
+	if (filename == "") {
+		report(stdout);
+	} else { 
+		FILE *fp;
+		fp = fopen(filename.c_str(),"w+");
+		if (fp != NULL) {
+			report(fp);
+		} else {
+			report(stdout);
+		}
+	}
+
+  }
 
 
   /// 出力する性能統計レポートの種類を選択し、ファイルへの出力を開始する。
@@ -1329,6 +1358,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
   {
 
     if (!is_PMlib_enabled) return;
+    if (!is_MPI_enabled) return;
 
 	#ifdef DEBUG_PRINT_MONITOR
     fprintf(stderr, "<PerfMonitor::printDetail> starts. \n");
@@ -1345,12 +1375,10 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
 
     if (my_rank != 0) return;
 
+    // PMlib Process Report is not generated for serial jobs
+
     // 	I. MPIランク別詳細レポート: MPIランク別測定結果を出力
-      if (is_MPI_enabled) {
-        fprintf(fp, "\n## PMlib Process Report --- Elapsed time for individual MPI ranks ------\n\n");
-      } else {
-        fprintf(fp, "\n## PMlib Process Report ------------------------------------------------\n\n");
-      }
+    fprintf(fp, "\n## PMlib Process Report --- Elapsed time for individual MPI ranks ------\n\n");
 
       // 測定時間の分母
       // initialize()からgather()までの区間（==Root区間）の測定時間を分母とする
@@ -1387,6 +1415,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
         } else {
           i = j; //	1:登録順で表示
         }
+        if (i == 0) continue;
 		// Policy change
 		// Both of exclusive sections and inclusive sections will be reported.
         //	if (!m_watchArray[i].m_exclusive) continue;
@@ -1524,6 +1553,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
         } else {
           i = j; //	1:登録順で表示
         }
+        if (i == 0) continue;
         if (!m_watchArray[i].m_exclusive) continue;
         m_watchArray[i].printGroupRanks(fp, tot, p_group, pp_ranks);
       }
@@ -1543,6 +1573,7 @@ void PerfMonitor::printBasicPower(FILE* fp, int maxLabelLen, int op_sort)
       } else {
         i = j; //	1:登録順で表示
       }
+      if (i == 0) continue;
       if (!m_watchArray[i].m_exclusive) continue;
       m_watchArray[i].printGroupHWPCsums(fp, m_watchArray[i].m_label, p_group, pp_ranks);
     }

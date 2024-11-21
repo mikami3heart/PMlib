@@ -6,7 +6,7 @@
 
 ## OUTLINE
 
-This library records the statistics information of run-time performance and the trace information of a user code and reports its summary. The PMlib is able to use for both serial and parallel environments including hybrid(OpenMP & MPI) code. In addition, PAPI interface allows us to access the information of build-in hardware counter.
+This library records the statistics information of run-time performance and the trace information of a user code and reports its summary. The PMlib is able to use for both serial and parallel environments including hybrid(OpenMP & MPI) code. PMlib integrates PAPI HWPC(hardware performance counter) APIs and Power APIs internally, and produces HPC oriented statistics reports as controlled by the environment variables.
 
 ## SOFTWARE REQUIREMENT
 - Linux OS or UNIX OS
@@ -24,7 +24,7 @@ Currently, PMlib APIs for Python are maintained in separate repository at
 https://github.com/mikami3heart/PMlib-pybind
 
 
-## INGREDIENTS
+## PMLIB PACKAGE INGREDIENTS
 ~~~
 ChangeLog         History of development
 License.txt       License to apply
@@ -170,9 +170,9 @@ The default compiler options are described in `cmake/CompilerOptionSelector.cmak
 See BUILD OPTION section in CMakeLists.txt for details.
 
 
-## Cmake Examples
+### Cmake Examples
 
-### Supercomputer Fugaku clang mode compiler
+#### Supercomputer Fugaku clang mode compiler
 
 ##### MPI version, cross compiling on login node
 
@@ -205,9 +205,8 @@ $ make install
 ~~~
 <br>
 
-### INTEL/GNU/PGI compiler on Intel Xeon server
+#### INTEL/GNU/PGI compiler on Intel Xeon server
 
-####
 ##### serial version
 
 Single process (non-MPI) with possible OpenMP thread parallel version.  
@@ -322,7 +321,9 @@ $ make install
 
 
 
-## DOCUMENTS FOR RUNNING THE APPLICATION WITH PMLIB
+## HOW TO COMPILE AND RUN
+
+### DOCUMENTS FOR COMPILING AND RUNNING THE APPLICATION WITH PMLIB
 
 There are several documents explaining how to build and run the application
 with PMlib.
@@ -347,7 +348,7 @@ under doc/ directory.
 
 
 
-## RUN TIME ENVIRONMENT VARIABLES
+### RUN TIME ENVIRONMENT VARIABLES
 
 When running applications linked with PMlib, the following environment variables can be set to the shell.
 
@@ -395,7 +396,7 @@ See the next environment variable `OTF_FILENAME`. If the value is "off" or not d
 The value of `${OTF_FILENAME}` is used to prefix the OTF file names if the value of previous `${OTF_TRACING}` has been set to "on" or "full". If this environment variable is not set, the default value of `"pmlib_optional_otf_files"` is used to prefix the OTF file names.
 
 
-## Remark on PAPI interface
+### Remark on PAPI interface
 
 Note that the default PAPI library provided with distro Operating System may not be best built for the
 specific CPU type. In such case, users may choose to build PAPI library using the latest distribution
