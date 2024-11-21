@@ -1,21 +1,15 @@
-//	#undef _OPENMP
-//	#define _OPENMP true
-// pmlib C++ test program based on stream.c by John McCalpin
-#define FLT_MAX 1.0e+16
+// pmlib C test program based on stream.c by John McCalpin
+# include <stdio.h>
+# include <math.h>
+# include <float.h>
+# include <limits.h>
+# include <sys/time.h>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-#include <PerfMonitor.h>
-using namespace pm_lib;
-extern PerfMonitor PM;
-
-# define N	20000000
-//	# define N	10000000
-//	# define N	5000000
-# define NTIMES	1000
-//	# define NTIMES	100
-//	# define NTIMES	100
+# define N	10000000
+//	# define N	1000000
+//	# define NTIMES	1000
+# define NTIMES	100
+//	# define NTIMES	2
 # define OFFSET	0
 
 # ifndef MIN
@@ -25,14 +19,11 @@ extern PerfMonitor PM;
 # define MAX(x,y) ((x)>(y)?(x):(y))
 # endif
 
-//	static double	a[N+OFFSET], b[N+OFFSET], c[N+OFFSET];
-//	static char	*label[4] = {"Copy:      ", "Scale:     ",
-//	    "Add:       ", "Triad:     "};
-
+static double	a[N+OFFSET], b[N+OFFSET], c[N+OFFSET];
 static double	avgtime[4] = {0}, maxtime[4] = {0},
 		mintime[4] = {FLT_MAX,FLT_MAX,FLT_MAX,FLT_MAX};
-
-static std::string label[4];
+static char	*label[4] = {"Copy:      ", "Scale:     ",
+    "Add:       ", "Triad:     "};
 
 static double	bytes[4] = {
     2 * sizeof(double) * N,
@@ -42,22 +33,20 @@ static double	bytes[4] = {
     };
 
 extern double mysecond();
-int checktick();
+#ifdef __cplusplus
+extern "C" int omp_get_num_threads();
+#else
+extern int omp_get_num_threads();
+#endif
 
 void stream()
 {
-    int			quantum, BytesPerWord;
-    int	j, k;
+    int			quantum, checktick();
+    int			BytesPerWord;
+    register int	j, k;
     double		scalar, times[4][NTIMES];
-	double*	a;
-	double*	b;
-	double*	c;
 
     printf("Modified STREAM Array size = %d\n" , N);
-	label[0] = "Copy:      ";
-	label[1] = "Scale:     ";
-	label[2] = "Add:       ";
-	label[3] = "Triad:     ";
 
 #ifdef _OPENMP
 #pragma omp parallel 
@@ -70,59 +59,47 @@ void stream()
     }
 #endif
 
-// allocating the arrays
-	a = new double [N+OFFSET];
-	b = new double [N+OFFSET];
-	c = new double [N+OFFSET];
 
     /* Get initial value for system clock. */
 #pragma omp parallel for
     for (j=0; j<N; j++) {
 	a[j] = 1.0;
-	b[j] = 2.0;
-	c[j] = 0.0;
+	//	b[j] = 2.0;
+	//	c[j] = 0.0;
 	}
+/*
+*/
 
     /*	--- MAIN LOOP --- repeat test cases NTIMES times --- */
 
     scalar = 3.0;
     for (k=0; k<NTIMES; k++)
 	{
-/*
- */
-	PM.start("sub1_copy");
 	times[0][k] = mysecond();
 #pragma omp parallel for
 	for (j=0; j<N; j++)
 	    c[j] = a[j];
 	times[0][k] = mysecond() - times[0][k];
-	PM.stop ("sub1_copy");
-
-	PM.start("sub2_scale");
+	
 	times[1][k] = mysecond();
 #pragma omp parallel for
 	for (j=0; j<N; j++)
 	    b[j] = scalar*c[j];
 	times[1][k] = mysecond() - times[1][k];
-	PM.stop ("sub2_scale");
-
-	PM.start("sub3_add");
+	
 	times[2][k] = mysecond();
 #pragma omp parallel for
 	for (j=0; j<N; j++)
 	    c[j] = a[j]+b[j];
 	times[2][k] = mysecond() - times[2][k];
-	PM.stop ("sub3_add");
 	
-	PM.start("sub4_triad");
 	times[3][k] = mysecond();
 #pragma omp parallel for
 	for (j=0; j<N; j++)
 	    a[j] = b[j]+scalar*c[j];
 	times[3][k] = mysecond() - times[3][k];
-	PM.stop ("sub4_triad");
 /*
- */
+*/
 	}
 
     /*	--- SUMMARY --- */
@@ -141,18 +118,16 @@ void stream()
     for (j=0; j<4; j++) {
 	avgtime[j] = avgtime[j]/(double)(NTIMES-1);
 
-	printf("%s%11.4f  %11.4f  %11.4f  %11.4f\n", label[j].c_str(),
+	printf("%s%11.4f  %11.4f  %11.4f  %11.4f\n", label[j],
 	       1.0E-06 * bytes[j]/mintime[j],
 	       avgtime[j],
 	       mintime[j],
 	       maxtime[j]);
     }
-
-// deallocating the arrays
-	delete[] a;
-	delete[] b;
-	delete[] c;
-
+	//	printf(" check values: %10.1f  %10.1f  %10.1f\n", a[1], b[2], c[3] );
+	//	for (j=0; j<N; j++) {
+	//	if ((j % 100000) == 0 ) printf("%f\n", a[j]);
+	//	}
 }
 
 # define	M	20

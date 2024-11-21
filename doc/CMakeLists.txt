@@ -15,8 +15,7 @@
 
 # Install files
 
-#	Add PMlib-user-manual.pdf later on
-install(FILES  ./tutorial/PMlib-Getting-Started.pdf
-        DESTINATION doc)
+#	Add documents later on
+#	install(FILES  tutorial  DESTINATION doc)
 
 ###

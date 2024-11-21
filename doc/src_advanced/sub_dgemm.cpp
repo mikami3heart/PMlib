@@ -15,8 +15,6 @@ static struct matrix {
 
 void sub_initialize_();
 void sub_dgemm_();
-void dgemm_ (char* transa,char* transb,int* nm,int* nn,int* nk,double* alpha,double* a,int* lda,double* b,int* ldb,double* beta,double* c,int* ldc) ;
-
 
 void sub_initialize_()
 {
@@ -45,13 +43,9 @@ void sub_dgemm_()
 	
 	nsize = matrix.nsize;
 	
-	if (true) {
-		//	printf("<dgemm> nsize=%d\n", nsize);
-		dgemm_ (trans, trans, &nsize, &nsize, &nsize, &one, matrix.a2, &nsize, matrix.b2, &nsize, &one, matrix.c2, &nsize) ;
-	} else {
 		//	printf("<some_kernel> nsize=%d\n", nsize);
-		#pragma omp parallel
-		#pragma omp for
+		//	#pragma omp parallel
+		//	#pragma omp for
 		for (i=0; i<nsize; i++){
 		//	#pragma loop unroll
 		for (j=0; j<nsize; j++){
@@ -64,6 +58,5 @@ void sub_dgemm_()
 			matrix.c2[i][j] = matrix.c2[i][j] + c1/(float)nsize;
 		}
 		}
-	}
 }
 

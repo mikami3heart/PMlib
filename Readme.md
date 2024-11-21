@@ -51,7 +51,7 @@ If the user downloads the tar ball to ${HOME}/pmlib and unpack it there, the dis
 directory becomes ${HOME}/pmlib/PMlib-9.1.  
 Set the shell variable PACKAGE\_DIR pointing to such distribution directory.
 ```
-	PACKAGE_DIR=${HOME}/pmlib/PMlib-9.1
+	PACKAGE_DIR=${HOME}/pmlib/PMlib-10.0
 ```  
 The installation will proceed under the subdirectory ${PACKAGE\_DIR}/BUILD.  
 Users should also set the shell variable PMLIB\_DIR pointing to the installation destination directory.

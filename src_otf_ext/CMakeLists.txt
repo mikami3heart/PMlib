@@ -21,9 +21,9 @@ C99()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSTATIC_PAPI_EVENTS_TABLE -D_REENTRANT -D_GNU_SOURCE")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_COMPILER_TLS  -DPAPI_NO_MEMORY_MANAGEMENT -DUSE_PAPI")
 
-add_library(otf_ext STATIC otf_ext.c)
+if(with_MPI)
+target_sources(PM PUBLIC  otf_ext.c)
+else()
+target_sources(PMmpi PUBLIC  otf_ext.c)
+endif()
 
-set_target_properties(otf_ext PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(otf_ext ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
-
-install(TARGETS otf_ext DESTINATION lib)

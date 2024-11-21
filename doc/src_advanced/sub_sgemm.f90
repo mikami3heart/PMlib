@@ -1,7 +1,7 @@
 module matrix_module
-real(kind=8), allocatable :: a2(:,:)
-real(kind=8), allocatable :: b2(:,:)
-real(kind=8), allocatable :: c2(:,:)
+real(kind=4), allocatable :: a2(:,:)
+real(kind=4), allocatable :: b2(:,:)
+real(kind=4), allocatable :: c2(:,:)
 integer matrix_size
 end module
 
@@ -35,16 +35,16 @@ subroutine sub_initialize
 	return
 end
 	
-subroutine sub_dgemm
+subroutine sub_sgemm
 	use matrix_module
-	real(kind=8) :: one, x
+	real(kind=4) :: one, x
 
-!cx	write(*,*) "<sub_dgemm> matrix size:", matrix_size
+!cx	write(*,*) "<sub_sgemm> matrix size:", matrix_size
 
 	if(.true.) then
 	n = matrix_size
 	one = 1.0
-	call dgemm ("N", "N", n, n, n, one, a2, n, b2, n, one, c2, n)
+	call sgemm ("N", "N", n, n, n, one, a2, n, b2, n, one, c2, n)
 
 	else
 !$omp parallel 

@@ -24,25 +24,26 @@ set(pm_files
        SupportReportCPP.cpp
        SupportReportC.c)
 
-if(NOT with_MPI)
-  add_library(PM STATIC ${pm_files})
-
-  # pmVersion.hをサーチするためにBINARYを先に書く
-  include_directories(${PROJECT_BINARY_DIR}/include ${PROJECT_SOURCE_DIR}/include)
-
-  install(TARGETS PM DESTINATION lib)
-
+if(with_MPI)
+  add_library(PMmpi STATIC)
+  target_sources(PMmpi PUBLIC ${pm_files})
+  set_target_properties(PMmpi PROPERTIES LINKER_LANGUAGE CXX)
+  target_link_libraries(PMmpi ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
 else()
-  add_library(PMmpi STATIC ${pm_files})
-  include_directories(${PROJECT_BINARY_DIR}/include)
-  include_directories(${PROJECT_SOURCE_DIR}/include)
-
-  install(TARGETS PMmpi DESTINATION lib)
-
+  add_library(PM STATIC)
+  target_sources(PM PUBLIC ${pm_files})
+  set_target_properties(PM PROPERTIES LINKER_LANGUAGE CXX)
+  target_link_libraries(PM ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES})
 endif()
 
+# pmVersion.hをサーチするためにBINARYを先に書く
+include_directories(${PROJECT_BINARY_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+
+
 if(with_PAPI)
-  # header ファイルはPerfWatchクラスなどをコンパイルする場合にも参照される
+  # papi header ファイルはPerfWatchクラスなどをコンパイルする場合にも参照される
   include_directories(${PAPI_DIR}/include)
 endif()
 
@@ -50,12 +51,3 @@ if(with_POWER)
   include_directories(${POWER_DIR}/include)
 endif()
 
-install(FILES ${PROJECT_SOURCE_DIR}/include/mpi_stubs.h
-              ${PROJECT_SOURCE_DIR}/include/PerfMonitor.h
-              ${PROJECT_SOURCE_DIR}/include/PerfWatch.h
-              ${PROJECT_SOURCE_DIR}/include/pmlib_otf.h
-              ${PROJECT_SOURCE_DIR}/include/pmlib_papi.h
-              ${PROJECT_SOURCE_DIR}/include/pmlib_power.h
-              ${PROJECT_SOURCE_DIR}/include/pmlib_api_C.h
-              ${PROJECT_BINARY_DIR}/include/pmVersion.h
-        DESTINATION include )

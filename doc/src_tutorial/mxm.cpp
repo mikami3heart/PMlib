@@ -27,7 +27,7 @@ int main (int argc, char *argv[])
 	//	PM.start("B:mxm2d");
 	mxm2d();
 	//	PM.stop ("B:mxm2d");
-	//	PM.report(stdout);
+	//	PM.report("");
 	printf("something was computed... %f\n",matrix.c2[0][0]);
 	return 0;
 }
