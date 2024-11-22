@@ -6,12 +6,14 @@
 
 ## OUTLINE
 
-This library records the statistics information of run-time performance and the trace information of a user code and reports its summary. The PMlib is able to use for both serial and parallel environments including hybrid(OpenMP & MPI) code. PMlib integrates PAPI HWPC(hardware performance counter) APIs and Power APIs internally, and produces HPC oriented statistics reports as controlled by the environment variables.
+This library records the statistics information of run-time performance and the trace information of a user code and reports its summary.
+PMlib can be used for both serial and parallel environments including hybrid(OpenMP & MPI) code.
+PMlib integrates PAPI HWPC(hardware performance counter) APIs and Power APIs internally, and produces HPC oriented statistics reports as controlled by the environment variables.
 
 ## SOFTWARE REQUIREMENT
 - Linux OS or UNIX OS
 - Compilers for C/C++/Fortran
-- Cmake
+- Cmake 3.20 or higher
 - MPI library  (optional)
 - PAPI library (optional)
 - Power API library (optional)
@@ -27,6 +29,7 @@ https://github.com/mikami3heart/PMlib-pybind
 ## PMLIB PACKAGE INGREDIENTS
 ~~~
 ChangeLog         History of development
+CMakeLists.txt    Cmake setup file
 License.txt       License to apply
 Readme.md         This document, including the description of build
 cmake/            Modules of cmake
@@ -36,36 +39,46 @@ doc/              Document
   src_advanced/   Advanced example programs calling PMlib APIs
   src_tutorial/   Example tutorial programs for beginners
   tutorial/       Tutorial documents
-example/          Example source codes
+example/          Example application source codes
 include/          PMlib Header files
 src/              PMlib Source codes
+src_pybind/       PMlib Python interface
 src_papi_ext/     PMlib Extension of PAPI interface
 src_power_ext/    PMlib Extension of Power API interface
 src_otf_ext/      PMlib Extension of Open Tracer Format interface
 ~~~
 
-## HOW TO BUILD
+## HOW TO BUILD PMLIB
 
-Before starting the installation, users should confirm if the software requirement is met.  
-Then, download the PMlib package tar ball to some directory and unpack it.
-The distribution files can be found under the directory PMlib-${version}. Current version is 10.0.
-If the user downloads the tar ball to ${HOME}/pmlib and unpack it there, the distribution
-directory becomes ${HOME}/pmlib/PMlib-10.0.
-Set the shell variable PACKAGE\_DIR pointing to such distribution directory.
-```
-	PACKAGE_DIR=${HOME}/pmlib/PMlib-10.0
-```  
-The installation will proceed under the subdirectory ${PACKAGE\_DIR}/BUILD.  
-Users should also set the shell variable PMLIB\_DIR pointing to the installation destination directory.
-```
-	PMLIB_DIR=${HOME}/usr_local_pmlib
-```  
-Using these shell variables, users should prepare a shell script file describing the build commands.
-The structure of the build commands is as simple as below.
-The only part which needs careful setup is the options to cmake command.
+Before starting the build, it is recommended to check if PMlib is already
+installed on the system by the system administrator and is available through
+some package manager such as Module Environment or Spack.
+These package managers often provide easier method to access and use PMlib,
+without needing the build process by users.
+If PMlib is not found on your system, build and install PMlib as explained
+in the following sections. Building PMlib is fairly straight forward.
 
+For building PMlib, set two shell variables first.
+The shell variable PACKAGE\_DIR should point to the PMlib source files.
+Git clone the PMlib repository in ${PACKAGE\_DIR}.
+The shell variable PMLIB\_DIR should point to the installation destination.
+
+```
+	PACKAGE_DIR=${HOME}/pmlib/PMlib-develop
+	PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib
+```  
+These two variables can point to anywhere, although somewhere under
+${HOME} is generally recommended.
 
 ### Build commands
+
+The structure of the build commands is as simple as below.
+Execute cmake to produce Makefiles and make.
+The only part which needs careful setup is the options to cmake command,
+which will be explained next.
+In this example, the build process goes under the subdirectory
+${PACKAGE\_DIR}/BUILD, and the built files will be installed in
+${PMLIB\_DIR}/lib and ${PMLIB\_DIR}/include.
 
 ~~~
 $ cd $PACKAGE_DIR
@@ -91,10 +104,11 @@ The default _directory_ is /usr/local/PMlib, which usually requires privilege.
 
 >  Setting this option "yes" specifies building PMlib with MPI library.
 If you link your application with MPI, then PMlib also has to be built `with_MPI=yes`.
+The default is no.
 
 `-D enable_OPENMP=` {no | yes}
 
-> Setting this option "yes" enables measuring OpenMP threads.
+> Setting this option "yes" enables measuring OpenMP threads. The default is no.
 
 `-D with_PAPI=` {no | yes |_directory_}
 
@@ -105,9 +119,9 @@ However in certain cases, users have to specify the appropriate PAPI _directory_
 An example of this is the cross-compiling environment.
 In the cross-compiling environment, there can be multiple PAPI libraries on the system,
 one for the current platform and another for the target platform.
-See examples in 4. INSTALLATION EXAMPLES section.
 Another example of this is when the OS provided PAPI library is obsolete for some reason,
 and the appropriate PAPI is installed under some alternative directory.
+The default is no.
 
 `-D with_POWER=` {no | yes | _directory_}
 
@@ -115,17 +129,20 @@ and the appropriate PAPI is installed under some alternative directory.
 Power API developed by Sandia National Laboratory is integrated into PMlib.
 Specifying `-Dwith_POWER=yes` should detect the correct path on these systems.
 In case not, specify this option with _directory_ pointing to the installed Power API library.
+The default is no.
 
 `-D with_OTF=` {no | _directory_}
 
 >  This option is for linkling OTF (Open Trace Format) library with PMlib.
 Specify this option with the _directory_ pointing to the installed OTF library.
+The default is no.
 
 `-D enable_PreciseTimer=` {no| yes}
 
 > This option enables the precise timer for high resolution measurement.
 Precise timers are currently supported for supercomputer Fugaku, Fujitsu FX1000, Intel Xeon servers.
 Setting this option "yes" is equivalent to adding the C++ compiler option `-D CMAKE_CXX_FLAGS="-DUSE\_PRECISE\_TIMER"`
+The default is no.
 
 `-D with_example=` {no| yes}
 
@@ -153,21 +170,14 @@ Setting this option "yes" is equivalent to adding the C++ compiler option `-D CM
 
 >  This option can be used for specifying a predefined toolchain file "file-name" for a specific platforms.
 
-### Default option values
-~~~
-with_MPI = no
-enable_OPENMP = no
-with_PAPI = no
-with_POWER = no
-with_OTF = no
-enable_PreciseTimer = no
-with_example = no
-enable_Fortran = no
-~~~
+### Compiler option values
 
-CC/CXX/F90/FC and other environment variables must be set for choosing the right compilers.
+Compiler options can be given as the options to cmake.
 The default compiler options are described in `cmake/CompilerOptionSelector.cmake` file.
-See BUILD OPTION section in CMakeLists.txt for details.
+On some systems the compiler names should be given as the environment variables
+such as CXX/CC/F90/FC.
+There are Toolchain cmake files which define the compiler names for
+several systems. See cmake/Toolchan_${system}.cmake.
 
 
 ### Cmake Examples
@@ -184,7 +194,7 @@ $ CFLAGS="--std=c11 -Nclang -Kocl -Nnofjprof "
 $ FFLAGS="-Kocl -Nnofjprof "
 $ PAPI_DIR=/opt/FJSVxos/devkit/aarch64/rfs/usr
 $ PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib
-$ PACKAGE_DIR=${HOME}/pmlib/PMlib-9.1
+$ PACKAGE_DIR=${HOME}/pmlib/PMlib-develop
 $ cd $PACKAGE_DIR
 $ mkdir -p BUILD-MPI
 $ cd BUILD-MPI
@@ -248,7 +258,7 @@ $ CXXFLAGS="-qopenmp -std=c++11 -DUSE_PRECISE_TIMER "
 $ CFLAGS="-qopenmp -std=c99"
 $ FFLAGS="-qopenmp -fpp "
 $ PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib
-$ PACKAGE_DIR=${HOME}/pmlib/PMlib-9.1
+$ PACKAGE_DIR=${HOME}/pmlib/PMlib-develop
 $ cd $PACKAGE_DIR
 $ mkdir -p BUILD
 $ cd BUILD
@@ -301,7 +311,7 @@ $ CXXFLAGS="-qopenmp -std=c++11 -DUSE_PRECISE_TIMER "
 $ CFLAGS="-qopenmp -std=c99"
 $ FFLAGS="-qopenmp -fpp "
 $ PMLIB_DIR=${HOME}/pmlib/usr_local_pmlib
-$ PACKAGE_DIR=${HOME}/pmlib/PMlib-9.1
+$ PACKAGE_DIR=${HOME}/pmlib/PMlib-develop
 $ cd $PACKAGE_DIR
 $ mkdir -p BUILD-MPI
 $ cd BUILD-MPI
@@ -321,7 +331,7 @@ $ make install
 
 
 
-## HOW TO COMPILE AND RUN
+## HOW TO COMPILE AND RUN YOUR APPLICATION
 
 ### DOCUMENTS FOR COMPILING AND RUNNING THE APPLICATION WITH PMLIB
 
@@ -368,9 +378,8 @@ To enable this feature, PMlib must be built with PAPI option enabled.
 `POWER_CHOOSER=(NODE|NUMA|PARTS|OFF)`
 
 If this environment variable is set, PMlib detects the POWER API supported devices and collect the data from them.
-The power consumption information is recorded in rather coarse manner, and the overhead to collect the data
-from those devices tends to be heavy. It is recommended to set this value as OFF (default) 
-for the measurement that requires precise time resolution.
+The power consumption information is recorded in rather coarse granularity, and the overhead to collect the data from those devices tends to be heavy.
+For the performance measurement that requires precise time resolution, it is recommended to set this value as OFF.
 To enable this feature, PMlib must be built with Power API option enabled.
 
 `BYPASS_PMLIB=YES`
