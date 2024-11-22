@@ -23,7 +23,7 @@ macro (AddOptimizeOption)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Kfast ")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Cpp -Kfast -Knooptmsg")
     if(enable_PreciseTimer)
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Nfjcex")
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Nfjcex -Nnofjprof -ffj-fjcex -ffj-no-fjprof ")
     endif()
 
   elseif (TARGET_ARCH STREQUAL "FX10")
