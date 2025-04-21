@@ -340,6 +340,17 @@ namespace pm_lib {
     void report(std::string filename);
 
 
+    /// report の Python インタフェイス版
+    ///
+    /// @param[in] std::string filename     output file name
+    ///
+    ///   @note filenameが"" (NULL)の場合は標準出力に出力される
+    ///
+    void pyreport(std::string filename) {
+    	report(filename);
+	}
+
+
 
     /// 出力する性能統計レポートの種類を選択し、ファイルへの出力を開始する。
     ///

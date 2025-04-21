@@ -2277,6 +2277,12 @@ namespace pm_lib {
 	second_per_cycle = 1.0;
 #if defined (USE_PRECISE_TIMER)
 	#if defined (__APPLE__)
+	  #if defined (__arm64__)
+		// frequency detection on M1/M2/M3 mac needs sudo (powermetrics)
+		// so we take the nominal numbers only
+		cpu_clock_freq = 3.20e9;
+		second_per_cycle = 1.0/cpu_clock_freq;
+	  #else
 		FILE *fp;
 		char buf[256];
 		long long llvalue;
@@ -2308,9 +2314,10 @@ namespace pm_lib {
 		}
 		pclose(fp);
 		return;
+	  #endif
 
-	#elif defined (__FUJITSU)			// Fugaku A64FX, FX100, K computer and Fujitsu compiler/library
-		//	__gettod() on Fujitsu compiler/library doesn't require cpu_clock_freq
+	#elif defined (__FUJITSU)			// Fugaku A64FX, and Fujitsu SW stack
+		//	__gettod() will be used, which doesn't require cpu_clock_freq
 		return;
 
 	#elif defined(__x86_64__)					// Intel Xeon

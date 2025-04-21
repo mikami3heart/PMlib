@@ -84,7 +84,7 @@ cmake_policy(SET CMP0012 NEW)
 
 #######
 set(PROJECT_VERSION "10.0.2")
-set(LIB_REVISION "20241114_1500")
+set(LIB_REVISION "20241212_1500")
 
 message(" ")
 message("${PROJECT_NAME} Version : ${PROJECT_VERSION}")
