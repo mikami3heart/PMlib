@@ -1,7 +1,7 @@
 # PMlib - Performance Monitor library
 
-* Copyright (c) 2012-2024 RIKEN Center for Computational Science (R-CCS). All rights reserved.
-* Copyright (c) 2016-2024 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
+* Copyright (c) 2012-2025 RIKEN Center for Computational Science (R-CCS). All rights reserved.
+* Copyright (c) 2016-2025 Research Institute for Information Technology (RIIT), Kyushu University. All rights reserved.
 * Copyright (c) 2010-2011 VCAD System Research Program, RIKEN. All rights reserved.
 
 ## OUTLINE

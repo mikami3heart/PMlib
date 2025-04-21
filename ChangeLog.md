@@ -4,6 +4,10 @@
 
 
 ---
+- 2025-04-21 Version 10.2
+  - doc/tutorial/Introducing-PMlib.pdf file is updated
+
+---
 - 2024-12-11 Version 10.1
   - Mac apple silicon frequency is not available via sysctl -n hw.cpufrequency
 	thus hard code the nominal frequency of 3.2 GHz
